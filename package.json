@@ -1,0 +1,1 @@
+{ "name":"gtrends-cli","version":"1.0.0","type":"module","bin":{"gtrends":"trends.mjs"},"license":"MIT","description":"Google Trends interest-over-time from the command line, no API key.","keywords":["google-trends","trends","cli","market-research"] }
