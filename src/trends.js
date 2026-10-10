@@ -15,16 +15,23 @@ export class TrendsSession {
   constructor() { this.cookie = null; }
 }
 
+// Trends' own ranges, or a custom "YYYY-MM-DD YYYY-MM-DD" window.
+export function isValidTime(time) {
+  return VALID_TIMES.has(time) || /^\d{4}-\d{2}-\d{2} \d{4}-\d{2}-\d{2}$/.test(time);
+}
+
 function stripPrefix(text) {
-  return JSON.parse(text.replace(/^\)\]\}'[^\n]*\n?/, ''));
+  try { return JSON.parse(text.replace(/^\)\]\}'[^\n]*\n?/, '')); }
+  catch { throw new TrendsError('BAD_RESPONSE', 'Trends answered with something other than data (a consent or captcha page?)', { retryable: true }); }
 }
 
 async function call(url, { fetchImpl, session, allowCookieRetry = false }) {
   const headers = { 'user-agent': UA, accept: 'application/json' };
   if (session.cookie) headers.cookie = session.cookie;
-  let res;
+  let res, body;
   try {
     res = await fetchImpl(url, { headers });
+    body = await res.text();
   } catch (e) {
     throw new TrendsError('NETWORK', `request failed: ${e.message}`, { retryable: true });
   }
@@ -38,12 +45,12 @@ async function call(url, { fetchImpl, session, allowCookieRetry = false }) {
     throw new TrendsError('BLOCKED', `HTTP ${res.status} from Trends`, { retryable: true });
   }
   if (res.status === 400) throw new TrendsError('INVALID_REQUEST', 'Trends rejected the request (bad keyword, geo, or time range)');
-  if (!res.ok) throw new TrendsError('NETWORK', `HTTP ${res.status} from Trends`, { retryable: true });
-  return stripPrefix(await res.text());
+  if (!res.ok) throw new TrendsError('NETWORK', `HTTP ${res.status} from Trends`, { retryable: res.status >= 500 || res.status === 408 });
+  return stripPrefix(body);
 }
 
 export async function fetchTrend(keyword, { geo = '', time = 'today 12-m', category = 0, property = '', fetchImpl = fetch, session } = {}) {
-  if (!VALID_TIMES.has(time)) time = 'today 12-m';
+  if (!isValidTime(time)) throw new TrendsError('INVALID_INPUT', `unsupported time range "${time}" (use ${[...VALID_TIMES].join(', ')}, or "YYYY-MM-DD YYYY-MM-DD")`);
   const req = { comparisonItem: [{ keyword, geo, time }], category, property };
   const exploreUrl = 'https://trends.google.com/trends/api/explore?hl=en-US&tz=0&req=' + encodeURIComponent(JSON.stringify(req));
   const explore = await call(exploreUrl, { fetchImpl, session, allowCookieRetry: true });
@@ -53,7 +60,7 @@ export async function fetchTrend(keyword, { geo = '', time = 'today 12-m', categ
   const data = await call(dataUrl, { fetchImpl, session, allowCookieRetry: true });
   const timeline = data?.default?.timelineData || [];
   const points = timeline
-    .filter((p) => p.hasData?.[0])
+    .filter((p) => p.hasData?.[0] && Array.isArray(p.value) && Number.isFinite(Number(p.time)))
     .map((p) => ({ time: Number(p.time), date: p.formattedTime, value: p.value[0], isPartial: !!p.isPartial }));
   // A single point in a multi-bucket range is Google's degenerate answer for junk keywords — not billable data.
   if (points.length <= 1) throw new TrendsError('NO_DATA', `Google Trends has no data for "${keyword}" in that range`);
