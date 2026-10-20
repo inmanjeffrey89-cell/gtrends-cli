@@ -1,6 +1,6 @@
 {
   "name": "gtrends-cli",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Google Trends interest-over-time from the command line, no API key.",
   "type": "module",
   "bin": {
@@ -23,6 +23,15 @@
     "url": "git+https://github.com/inmanjeffrey89-cell/gtrends-cli.git"
   },
   "license": "MIT",
+  "author": {
+    "name": "Jeffrey Inman",
+    "email": "jeff.helpsupport@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/inmanjeffrey89-cell/gtrends-cli/issues",
+    "email": "jeff.helpsupport@gmail.com"
+  },
+  "homepage": "https://github.com/inmanjeffrey89-cell/gtrends-cli#readme",
   "keywords": [
     "google-trends",
     "trends",

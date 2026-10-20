@@ -36,13 +36,13 @@ Identical across every tool in this family, so they chain cleanly from shell scr
 With `--json`, success is one line on stdout:
 
 ```json
-{"tool":"gtrends","version":"2.0.0","input":{...},"complete":true,"count":42,"results":[...]}
+{"tool":"gtrends","version":"2.0.1","input":{...},"complete":true,"count":42,"results":[...]}
 ```
 
 and a failure is one line on stderr:
 
 ```json
-{"tool":"gtrends","version":"2.0.0","exitCode":2,"error":{"type":"BLOCKED","message":"HTTP 429","retryable":true}}
+{"tool":"gtrends","version":"2.0.1","exitCode":2,"error":{"type":"BLOCKED","message":"HTTP 429","retryable":true}}
 ```
 
 Branch on the exit code; log `error.type`: `USAGE`, `INVALID_INPUT` and `INVALID_REQUEST` (the source rejected the input) exit `1`; `NETWORK`, `BLOCKED` and `BAD_RESPONSE` (a captcha or consent page instead of data) exit `2` with `retryable` set; `NOT_FOUND` and `NO_DATA` exit `3`.
